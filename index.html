@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>SUBHA | Obsidian Void Portfolio</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        colors: {
+          "primary": "#FF003C",
+          "on-primary": "#ffffff",
+          "background": "#050505",
+          "surface": "rgba(10,10,10,0.4)",
+          "neon-red": "#FF003C",
+        },
+        fontFamily: {
+          "headline": ["Space Grotesk"],
+          "body": ["Manrope"],
+        },
+        backdropBlur: { "3xl": "60px" }
+      },
+    },
+  }
+</script>
+<style>
+  .material-symbols-outlined {
+    font-variation-settings: 'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24;
+  }
+  ::-webkit-scrollbar { width: 3px; }
+  ::-webkit-scrollbar-track { background: #050505; }
+  ::-webkit-scrollbar-thumb { background: #FF003C; }
+
+  .video-bg-container {
+    position: fixed; top:0; left:0; width:100%; height:100vh; z-index:-1; overflow:hidden;
+  }
+  .video-bg {
+    min-width:100%; min-height:100%; width:auto; height:auto;
+    position:absolute; top:50%; left:50%;
+    transform:translate(-50%,-50%); object-fit:cover;
+    filter:brightness(0.4) saturate(1.2);
+  }
+  .obsidian-glass {
+    background: rgba(5,5,5,0.4);
+    backdrop-filter: blur(40px);
+    -webkit-backdrop-filter: blur(40px);
+    border: 1px solid rgba(255,0,60,0.1);
+  }
+  .neon-text-glow { text-shadow: 0 0 20px rgba(255,0,60,0.6); }
+  .neon-border-glow { box-shadow: 0 0 20px rgba(255,0,60,0.2); }
+
+  /* ── Section transition system ── */
+  .section-panel {
+    display: none;
+    opacity: 0;
+    transform: translateY(24px);
+    transition: opacity 0.45s ease, transform 0.45s ease;
+  }
+  .section-panel.active {
+    display: block;
+  }
+  .section-panel.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* ── Modal ── */
+  .modal-overlay {
+    position: fixed; inset:0; z-index:200;
+    background: rgba(0,0,0,0.85);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    display: flex; align-items: center; justify-content: center;
+    padding: 24px;
+    opacity:0; pointer-events:none;
+    transition: opacity 0.35s ease;
+  }
+  .modal-overlay.open {
+    opacity:1; pointer-events:all;
+  }
+  .modal-box {
+    width: 100%; max-width: 680px; max-height: 90vh;
+    overflow-y: auto;
+    background: rgba(8,8,8,0.97);
+    border: 1px solid rgba(255,0,60,0.25);
+    border-radius: 16px;
+    padding: 48px;
+    transform: translateY(32px);
+    transition: transform 0.4s ease;
+  }
+  .modal-overlay.open .modal-box {
+    transform: translateY(0);
+  }
+
+  /* Scanline */
+  .scanline::after {
+    content:""; position:absolute; inset:0;
+    background: linear-gradient(to bottom, transparent 50%, rgba(255,0,60,0.05) 51%, transparent 51%);
+    background-size: 100% 4px;
+    pointer-events:none;
+  }
+
+  /* Nav active link */
+  .nav-link { position: relative; }
+  .nav-link::after {
+    content:''; position:absolute; bottom:-4px; left:0; width:0; height:1px;
+    background:#FF003C; transition: width 0.3s ease;
+  }
+  .nav-link.active { color:#FF003C; }
+  .nav-link.active::after, .nav-link:hover::after { width:100%; }
+
+  /* Mobile menu */
+  .mobile-menu {
+    position:fixed; top:0; right:0; height:100vh; width:280px; z-index:150;
+    background: rgba(5,5,5,0.98);
+    border-left: 1px solid rgba(255,0,60,0.15);
+    backdrop-filter: blur(40px);
+    transform: translateX(100%);
+    transition: transform 0.4s ease;
+    display:flex; flex-direction:column; justify-content:center; gap:40px; padding:48px;
+  }
+  .mobile-menu.open { transform: translateX(0); }
+  .mobile-overlay {
+    position:fixed; inset:0; z-index:140; background:rgba(0,0,0,0.6);
+    opacity:0; pointer-events:none; transition: opacity 0.3s;
+  }
+  .mobile-overlay.open { opacity:1; pointer-events:all; }
+
+  /* Skill bar animate */
+  .skill-fill { width: 0 !important; transition: width 1.2s cubic-bezier(.4,0,.2,1); }
+  .skill-fill.animated { width: var(--w) !important; }
+
+  /* Scroll within sections */
+  .section-panel { min-height:100vh; overflow-y:auto; }
+
+  /* Input styles */
+  input, textarea {
+    background: rgba(255,255,255,0.04) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    color: #fff !important;
+    border-radius: 6px;
+    padding: 14px 18px;
+    width: 100%;
+    font-family: 'Manrope', sans-serif;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.3s;
+  }
+  input:focus, textarea:focus {
+    border-color: rgba(255,0,60,0.5) !important;
+  }
+  textarea { resize: vertical; min-height: 120px; }
+</style>
+</head>
+<body class="bg-background text-white font-body selection:bg-primary selection:text-white overflow-hidden" style="height:100vh;">
+
+<!-- Video Background -->
+<div class="video-bg-container">
+  <video autoplay class="video-bg" loop muted playsinline>
+    <source src="https://assets.mixkit.co/videos/preview/mixkit-abstract-technology-red-particles-background-loop-42350-large.mp4" type="video/mp4"/>
+  </video>
+  <div class="absolute inset-0 bg-gradient-to-b from-transparent via-black/20 to-black z-0"></div>
+</div>
+
+<!-- Navigation -->
+<nav class="fixed top-0 left-0 w-full z-50 px-6 md:px-8 py-6 flex justify-between items-center bg-transparent">
+  <div class="flex items-center gap-4">
+    <button onclick="showSection('home')" class="text-2xl font-headline font-bold tracking-tighter neon-text-glow">SUBHA<span class="text-primary">.</span></button>
+  </div>
+  <div class="hidden md:flex items-center gap-10 text-[10px] font-headline font-bold tracking-[0.3em] uppercase opacity-80">
+    <button onclick="showSection('home')"    class="nav-link" id="nav-home">Interface</button>
+    <button onclick="showSection('projects')" class="nav-link" id="nav-projects">Archives</button>
+    <button onclick="showSection('skills')"   class="nav-link" id="nav-skills">Neural</button>
+    <button onclick="showSection('contact')"  class="nav-link" id="nav-contact">Establish</button>
+  </div>
+  <div class="flex items-center gap-4">
+    <div class="hidden md:flex px-3 py-1 bg-primary/20 border border-primary/40 rounded text-[9px] font-headline font-bold uppercase tracking-widest items-center gap-2">
+      <span class="relative flex h-2 w-2">
+        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+        <span class="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+      </span>
+      Open to Work
+    </div>
+    <!-- Hamburger -->
+    <button id="hamburger" onclick="toggleMobileMenu()" class="md:hidden flex flex-col gap-[5px] p-2">
+      <span class="block w-6 h-[1.5px] bg-white transition-all" id="hb1"></span>
+      <span class="block w-6 h-[1.5px] bg-white transition-all" id="hb2"></span>
+      <span class="block w-4 h-[1.5px] bg-white transition-all" id="hb3"></span>
+    </button>
+  </div>
+</nav>
+
+<!-- Mobile Menu -->
+<div class="mobile-overlay" id="mobileOverlay" onclick="toggleMobileMenu()"></div>
+<div class="mobile-menu" id="mobileMenu">
+  <span class="text-[9px] font-headline text-primary uppercase tracking-[0.5em] font-bold mb-4">Navigation</span>
+  <button onclick="showSection('home');toggleMobileMenu()"    class="text-2xl font-headline font-bold tracking-tighter text-left hover:text-primary transition-colors">Interface</button>
+  <button onclick="showSection('projects');toggleMobileMenu()" class="text-2xl font-headline font-bold tracking-tighter text-left hover:text-primary transition-colors">Archives</button>
+  <button onclick="showSection('skills');toggleMobileMenu()"   class="text-2xl font-headline font-bold tracking-tighter text-left hover:text-primary transition-colors">Neural</button>
+  <button onclick="showSection('contact');toggleMobileMenu()"  class="text-2xl font-headline font-bold tracking-tighter text-left hover:text-primary transition-colors">Establish</button>
+  <div class="mt-8 flex items-center gap-2 px-3 py-2 bg-primary/20 border border-primary/40 rounded text-[9px] font-headline font-bold uppercase tracking-widest w-fit">
+    <span class="relative flex h-2 w-2">
+      <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+      <span class="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+    </span>
+    Open to Work
+  </div>
+</div>
+
+<!-- ════════ SECTIONS ════════ -->
+<main class="relative z-10 h-screen overflow-hidden">
+
+  <!-- ── HOME ── -->
+  <div class="section-panel active" id="section-home">
+    <div class="min-h-screen flex flex-col justify-center px-6 md:px-20 py-32 overflow-y-auto">
+      <div class="max-w-5xl">
+        <div class="mb-6 flex items-center gap-4">
+          <span class="h-[1px] w-12 bg-primary"></span>
+          <span class="text-[10px] font-headline tracking-[0.5em] text-primary uppercase">System Ready // West Bengal, IN</span>
+        </div>
+        <h1 class="text-6xl md:text-9xl font-headline font-bold mb-8 leading-[0.85] tracking-tighter">
+          AI DEVELOPER<br/>
+          <span class="text-primary neon-text-glow italic">ENGINEER.</span>
+        </h1>
+        <p class="text-lg md:text-xl text-slate-300 max-w-2xl font-light leading-relaxed mb-12">
+          Subha Mahata — Architecting high-fidelity <span class="text-white font-medium italic underline decoration-primary/40 underline-offset-8">autonomous intelligence</span>. Specialized in computer vision, human-motion skeletal mapping, and neural-physical integration.
+        </p>
+        <div class="flex flex-wrap gap-8 md:gap-12 items-end">
+          <button onclick="showSection('projects')" class="group relative px-10 py-5 overflow-hidden rounded-sm border border-primary/50 transition-all hover:bg-primary">
+            <span class="relative z-10 font-headline font-bold uppercase tracking-[0.2em] text-sm group-hover:text-white transition-colors">Access Archives</span>
+            <div class="absolute inset-0 bg-primary translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out"></div>
+          </button>
+          <div class="flex gap-12 md:gap-16">
+            <div>
+              <div class="text-4xl font-headline font-bold text-white">6<span class="text-primary">+</span></div>
+              <div class="text-[9px] uppercase tracking-widest text-slate-500 font-bold mt-1">Active Projects</div>
+            </div>
+            <div>
+              <div class="text-4xl font-headline font-bold text-white">10</div>
+              <div class="text-[9px] uppercase tracking-widest text-slate-500 font-bold mt-1">Core Tech Skills</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Links Row -->
+        <div class="mt-20 flex flex-wrap gap-6">
+          <button onclick="showSection('skills')" class="flex items-center gap-3 text-[10px] font-headline uppercase tracking-widest text-slate-500 hover:text-primary transition-colors group">
+            <span class="material-symbols-outlined text-base group-hover:text-primary">memory</span>Neural Stack
+          </button>
+          <button onclick="showSection('contact')" class="flex items-center gap-3 text-[10px] font-headline uppercase tracking-widest text-slate-500 hover:text-primary transition-colors group">
+            <span class="material-symbols-outlined text-base group-hover:text-primary">alternate_email</span>Establish Link
+          </button>
+          <a href="https://github.com/Subha-jit007" target="_blank" class="flex items-center gap-3 text-[10px] font-headline uppercase tracking-widest text-slate-500 hover:text-primary transition-colors group">
+            <span class="material-symbols-outlined text-base group-hover:text-primary">code</span>Source Archives
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── PROJECTS ── -->
+  <div class="section-panel" id="section-projects">
+    <div class="min-h-screen px-6 md:px-20 py-28 overflow-y-auto">
+      <div class="mb-16 flex flex-col md:flex-row justify-between items-end gap-8">
+        <div class="max-w-2xl">
+          <span class="text-xs font-headline tracking-[0.4em] text-primary uppercase mb-4 block">Archive: 2024</span>
+          <h2 class="text-5xl md:text-7xl font-headline font-bold tracking-tighter uppercase leading-none">Engineering<br/><span class="text-transparent bg-clip-text bg-gradient-to-r from-white to-white/20">Excellence.</span></h2>
+        </div>
+        <span class="material-symbols-outlined text-5xl opacity-20">memory</span>
+      </div>
+
+      <!-- Featured Projects Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- Project 001 -->
+        <div onclick="openProject(0)" class="group relative h-[500px] overflow-hidden rounded-xl obsidian-glass transition-all duration-500 hover:scale-[1.02] hover:neon-border-glow cursor-pointer">
+          <img alt="Hand Tracking" class="absolute inset-0 w-full h-full object-cover opacity-40 grayscale group-hover:grayscale-0 group-hover:opacity-60 transition-all duration-700" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDuJf8TfVkhyUl07XU4xTfbnNV71xwekZ-k710qjK8qLC3pwraHfyE_sOnlIuyjL-0IwjyrFd_NaCWyujSZtA8d8qk1m9z34tYL33PwRZ8pSvvtlNUJIFlNeHp0vC6FwjD8LPJyiE0bFmHY73W_uBZCXdSQjewsgPglhzEpA1Dq4m8GsN5AJj8HSUoSskaQn5one8UOpEcTqlc4sTtZf8WBKXALC4sPtv_j6mG4vkuzRXitdbtClkJlL5l1kBiOY2RQdGnzj4O-3w"/>
+          <div class="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent"></div>
+          <div class="absolute bottom-0 left-0 p-8 w-full">
+            <span class="text-[10px] font-headline text-primary font-bold tracking-[0.4em] uppercase mb-3 block">Archive 001</span>
+            <h3 class="text-2xl font-headline font-bold text-white mb-3 group-hover:neon-text-glow transition-all">Hand Movement Capturer</h3>
+            <p class="text-slate-400 text-sm mb-5 line-clamp-2">High-fidelity MediaPipe implementation for real-time skeletal hand mapping and gesture recognition systems.</p>
+            <div class="flex gap-3">
+              <span class="px-3 py-1 bg-white/5 border border-white/10 rounded-full text-[9px] font-headline font-bold uppercase tracking-widest">MediaPipe</span>
+              <span class="px-3 py-1 bg-white/5 border border-white/10 rounded-full text-[9px] font-headline font-bold uppercase tracking-widest">Python</span>
+            </div>
+          </div>
+          <div class="absolute top-6 right-6 w-10 h-10 rounded-full border border-white/20 flex items-center justify-center group-hover:border-primary transition-colors">
+            <span class="material-symbols-outlined text-white/50 group-hover:text-primary text-sm">open_in_full</span>
+          </div>
+        </div>
+
+        <!-- Project 002 -->
+        <div onclick="openProject(1)" class="group relative h-[500px] overflow-hidden rounded-xl obsidian-glass transition-all duration-500 hover:scale-[1.02] hover:neon-border-glow cursor-pointer lg:mt-16">
+          <img alt="Air Draw" class="absolute inset-0 w-full h-full object-cover opacity-40 grayscale group-hover:grayscale-0 group-hover:opacity-60 transition-all duration-700" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCKCF55HXpKYFhR2tNanR0JWeFBcCku7vgRehIa7M8DW_rc5hqRyLYfnMWXJBj025My9NgYHe_ho_ISi509zMBZYgxw-euA4zwy7yaAbFX91IEeUgaORqagg9uPQI1C1RNeJ_ZhZgkM_DC6Z8TQLMBPxlqe9pAFwhlzxyMQK9YuqyrfciCZvjL73mud81LDUP2eZRtYhCjcxB3XZBMUq_-Un62jSVbdfamEBAZmxXxkZMDs-bdkqaYPC2bPkk1yN_CFO3__xoYNXw"/>
+          <div class="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent"></div>
+          <div class="absolute bottom-0 left-0 p-8 w-full">
+            <span class="text-[10px] font-headline text-primary font-bold tracking-[0.4em] uppercase mb-3 block">Archive 002</span>
+            <h3 class="text-2xl font-headline font-bold text-white mb-3">Air Draw Interaction</h3>
+            <p class="text-slate-400 text-sm mb-5 line-clamp-2">Spatial computing experiment allowing users to render digital art via mid-air finger gestures in 3D environments.</p>
+            <div class="flex gap-3">
+              <span class="px-3 py-1 bg-white/5 border border-white/10 rounded-full text-[9px] font-headline font-bold uppercase tracking-widest">Computer Vision</span>
+            </div>
+          </div>
+          <div class="absolute top-6 right-6 w-10 h-10 rounded-full border border-white/20 flex items-center justify-center group-hover:border-primary transition-colors">
+            <span class="material-symbols-outlined text-white/50 group-hover:text-primary text-sm">open_in_full</span>
+          </div>
+        </div>
+
+        <!-- Project 003 (House Cleaner Robot) -->
+        <div onclick="openProject(2)" class="group relative h-[500px] overflow-hidden rounded-xl obsidian-glass transition-all duration-500 hover:scale-[1.02] hover:neon-border-glow cursor-pointer">
+          <img alt="House Cleaner Robot" class="absolute inset-0 w-full h-full object-cover opacity-40 grayscale group-hover:grayscale-0 group-hover:opacity-60 transition-all duration-700" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBpnbw8eZCMJYeSp32LWObVqmcDSTN-4bq_t2YbNASUKYt7k9cos_GuuFsCwPqvG2S4QsyLuYK3L8A87dc8Yslab8_2ue2YtB_Avce4H0DGJbp-ODvC9zR028e0WkakVvnLvW3r6GCDeHVbYL7Js2iz2LuST1-c5G3ae-oXgRMZnMx41r2EzB_Ky-0QIGutfWPcmq1X9MU5JqPb9BCJU5vIe1YODWiDuJQaqmPKO59zM62KNCFzcpazphlap0ci8eKtHWoop6tAqQ"/>
+          <div class="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent"></div>
+          <div class="absolute bottom-0 left-0 p-8 w-full">
+            <span class="text-[10px] font-headline text-primary font-bold tracking-[0.4em] uppercase mb-3 block">Archive 006</span>
+            <h3 class="text-2xl font-headline font-bold text-white mb-3">House Cleaner Robot</h3>
+            <p class="text-slate-400 text-sm mb-5 line-clamp-2">Autonomous domestic navigation system integrating robotics sensors with high-level automation protocols.</p>
+            <div class="flex gap-3">
+              <span class="px-3 py-1 bg-white/5 border border-white/10 rounded-full text-[9px] font-headline font-bold uppercase tracking-widest">Automation</span>
+              <span class="px-3 py-1 bg-white/5 border border-white/10 rounded-full text-[9px] font-headline font-bold uppercase tracking-widest">Hardware</span>
+            </div>
+          </div>
+          <div class="absolute top-6 right-6 w-10 h-10 rounded-full border border-white/20 flex items-center justify-center group-hover:border-primary transition-colors">
+            <span class="material-symbols-outlined text-white/50 group-hover:text-primary text-sm">open_in_full</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Smaller Projects Roll -->
+      <div class="mt-10 grid grid-cols-1 md:grid-cols-3 gap-6 pb-20">
+        <div onclick="openProject(3)" class="obsidian-glass p-7 rounded-xl hover:border-primary/40 transition-all group cursor-pointer hover:neon-border-glow">
+          <span class="text-[9px] font-headline text-slate-500 uppercase tracking-widest block mb-2">Project 003</span>
+          <h4 class="text-xl font-headline font-bold mb-3 group-hover:text-primary transition-colors">Transparent UI Website</h4>
+          <p class="text-xs text-slate-400 mb-5">Glassmorphism architecture for next-gen SaaS platforms.</p>
+          <span class="material-symbols-outlined text-primary opacity-0 group-hover:opacity-100 transition-opacity">arrow_right_alt</span>
+        </div>
+        <div onclick="openProject(4)" class="obsidian-glass p-7 rounded-xl hover:border-primary/40 transition-all group cursor-pointer hover:neon-border-glow">
+          <span class="text-[9px] font-headline text-slate-500 uppercase tracking-widest block mb-2">Project 004</span>
+          <h4 class="text-xl font-headline font-bold mb-3 group-hover:text-primary transition-colors">Troll Snake Game</h4>
+          <p class="text-xs text-slate-400 mb-5">Advanced algorithmic pathfinding logic implemented in gaming.</p>
+          <span class="material-symbols-outlined text-primary opacity-0 group-hover:opacity-100 transition-opacity">arrow_right_alt</span>
+        </div>
+        <div onclick="openProject(5)" class="obsidian-glass p-7 rounded-xl hover:border-primary/40 transition-all group cursor-pointer hover:neon-border-glow">
+          <span class="text-[9px] font-headline text-slate-500 uppercase tracking-widest block mb-2">Project 005</span>
+          <h4 class="text-xl font-headline font-bold mb-3 group-hover:text-primary transition-colors">Weather App Engine</h4>
+          <p class="text-xs text-slate-400 mb-5">Real-time API data processing with predictive visualization.</p>
+          <span class="material-symbols-outlined text-primary opacity-0 group-hover:opacity-100 transition-opacity">arrow_right_alt</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SKILLS ── -->
+  <div class="section-panel" id="section-skills">
+    <div class="min-h-screen px-6 md:px-20 py-28 overflow-y-auto">
+      <div class="max-w-7xl mx-auto">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-16 items-start">
+          <div>
+            <span class="text-xs font-headline tracking-[0.5em] text-primary uppercase mb-6 block">Capabilities</span>
+            <h2 class="text-5xl md:text-8xl font-headline font-bold tracking-tighter mb-16 leading-none uppercase">Neural<br/><span class="text-primary italic">Architecture.</span></h2>
+            <div class="space-y-10" id="skillBars">
+              <div class="space-y-3">
+                <div class="flex justify-between items-end">
+                  <span class="font-headline font-bold uppercase tracking-widest text-sm">Prompt Engineering</span>
+                  <span class="text-primary font-headline font-bold">95%</span>
+                </div>
+                <div class="w-full bg-white/5 h-[1px] relative">
+                  <div class="absolute top-0 left-0 h-[2px] bg-primary shadow-[0_0_15px_#FF003C] skill-fill" style="--w:95%"></div>
+                </div>
+              </div>
+              <div class="space-y-3">
+                <div class="flex justify-between items-end">
+                  <span class="font-headline font-bold uppercase tracking-widest text-sm">LLM Engineering</span>
+                  <span class="text-primary font-headline font-bold">90%</span>
+                </div>
+                <div class="w-full bg-white/5 h-[1px] relative">
+                  <div class="absolute top-0 left-0 h-[2px] bg-primary shadow-[0_0_15px_#FF003C] skill-fill" style="--w:90%"></div>
+                </div>
+              </div>
+              <div class="space-y-3">
+                <div class="flex justify-between items-end">
+                  <span class="font-headline font-bold uppercase tracking-widest text-sm">Automation Systems</span>
+                  <span class="text-primary font-headline font-bold">88%</span>
+                </div>
+                <div class="w-full bg-white/5 h-[1px] relative">
+                  <div class="absolute top-0 left-0 h-[2px] bg-primary shadow-[0_0_15px_#FF003C] skill-fill" style="--w:88%"></div>
+                </div>
+              </div>
+              <div class="space-y-3">
+                <div class="flex justify-between items-end">
+                  <span class="font-headline font-bold uppercase tracking-widest text-sm">Complex Problem Solving</span>
+                  <span class="text-primary font-headline font-bold">93%</span>
+                </div>
+                <div class="w-full bg-white/5 h-[1px] relative">
+                  <div class="absolute top-0 left-0 h-[2px] bg-primary shadow-[0_0_15px_#FF003C] skill-fill" style="--w:93%"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Expertise Grid -->
+          <div class="grid grid-cols-2 gap-5 relative mt-8 lg:mt-24 pb-20">
+            <div class="absolute inset-0 border border-white/10 rotate-3 pointer-events-none rounded-lg"></div>
+            <div onclick="openSkill('Machine Learning','Applying ML algorithms to build intelligent, adaptive systems. Experienced with supervised/unsupervised learning pipelines.','80%','terminal')" class="p-7 obsidian-glass border border-white/5 rounded-lg cursor-pointer hover:border-primary/40 transition-all group">
+              <span class="material-symbols-outlined text-primary mb-5 text-4xl">terminal</span>
+              <h4 class="font-headline font-bold text-xs uppercase tracking-[0.2em] mb-3">Machine Learning</h4>
+              <p class="text-[10px] text-slate-500 font-bold uppercase">Proficiency: 80%</p>
+            </div>
+            <div onclick="openSkill('Cyber Security','Ethical hacking, network defense strategies, vulnerability analysis, and secure system architecture design.','78%','security')" class="p-7 obsidian-glass border border-white/5 rounded-lg mt-10 cursor-pointer hover:border-primary/40 transition-all group">
+              <span class="material-symbols-outlined text-primary mb-5 text-4xl">security</span>
+              <h4 class="font-headline font-bold text-xs uppercase tracking-[0.2em] mb-3">Cyber Security</h4>
+              <p class="text-[10px] text-slate-500 font-bold uppercase">Proficiency: 78%</p>
+            </div>
+            <div onclick="openSkill('Computer Vision','Real-time skeletal mapping, gesture recognition, and MediaPipe-powered visual intelligence systems.','92%','visibility')" class="p-7 obsidian-glass border border-white/5 rounded-lg -mt-10 cursor-pointer hover:border-primary/40 transition-all group">
+              <span class="material-symbols-outlined text-primary mb-5 text-4xl">visibility</span>
+              <h4 class="font-headline font-bold text-xs uppercase tracking-[0.2em] mb-3">Computer Vision</h4>
+              <p class="text-[10px] text-slate-500 font-bold uppercase">Proficiency: 92%</p>
+            </div>
+            <div onclick="openSkill('Robotics','Hardware-software integration, autonomous navigation, sensor fusion, and real-world automation protocols.','85%','robot_2')" class="p-7 obsidian-glass border border-white/5 rounded-lg cursor-pointer hover:border-primary/40 transition-all group">
+              <span class="material-symbols-outlined text-primary mb-5 text-4xl">robot_2</span>
+              <h4 class="font-headline font-bold text-xs uppercase tracking-[0.2em] mb-3">Robotics</h4>
+              <p class="text-[10px] text-slate-500 font-bold uppercase">Proficiency: 85%</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── CONTACT ── -->
+  <div class="section-panel" id="section-contact">
+    <div class="min-h-screen flex items-center justify-center px-6 md:px-20 py-28 overflow-y-auto">
+      <div class="max-w-4xl w-full mx-auto text-center obsidian-glass p-10 md:p-20 rounded-3xl border border-primary/20 relative">
+        <div class="absolute -bottom-12 -right-12 w-48 h-48 bg-primary/20 rounded-full blur-[100px] pointer-events-none"></div>
+        <span class="text-xs font-headline tracking-[0.6em] text-primary uppercase mb-10 block">Connection Protocol</span>
+        <h2 class="text-4xl md:text-8xl font-headline font-bold text-white mb-12 leading-tight tracking-tighter">Ready to build the <span class="italic text-primary neon-text-glow">unbuildable?</span></h2>
+
+        <!-- Contact Links -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 text-left mb-12">
+          <div class="space-y-7">
+            <a class="flex items-center gap-5 group" href="mailto:subhamahata1234@gmail.com">
+              <div class="w-12 h-12 rounded-full border border-white/10 flex items-center justify-center group-hover:border-primary transition-all flex-shrink-0">
+                <span class="material-symbols-outlined text-slate-500 group-hover:text-primary">alternate_email</span>
+              </div>
+              <div>
+                <div class="text-[9px] font-headline text-slate-500 uppercase tracking-widest font-bold">Neural Link</div>
+                <div class="text-sm text-white">subhamahata1234@gmail.com</div>
+              </div>
+            </a>
+            <a class="flex items-center gap-5 group" href="https://github.com/Subha-jit007" target="_blank">
+              <div class="w-12 h-12 rounded-full border border-white/10 flex items-center justify-center group-hover:border-primary transition-all flex-shrink-0">
+                <span class="material-symbols-outlined text-slate-500 group-hover:text-primary">code</span>
+              </div>
+              <div>
+                <div class="text-[9px] font-headline text-slate-500 uppercase tracking-widest font-bold">Source Archives</div>
+                <div class="text-sm text-white">GitHub/Subha-jit007</div>
+              </div>
+            </a>
+          </div>
+          <div class="space-y-7">
+            <a class="flex items-center gap-5 group" href="https://www.instagram.com/_subh_a15" target="_blank">
+              <div class="w-12 h-12 rounded-full border border-white/10 flex items-center justify-center group-hover:border-primary transition-all flex-shrink-0">
+                <span class="material-symbols-outlined text-slate-500 group-hover:text-primary">sensors</span>
+              </div>
+              <div>
+                <div class="text-[9px] font-headline text-slate-500 uppercase tracking-widest font-bold">Social Interface</div>
+                <div class="text-sm text-white">@_subh_a15</div>
+              </div>
+            </a>
+            <div class="flex items-center gap-5">
+              <div class="w-12 h-12 rounded-full border border-white/10 flex items-center justify-center flex-shrink-0">
+                <span class="material-symbols-outlined text-slate-500">location_on</span>
+              </div>
+              <div>
+                <div class="text-[9px] font-headline text-slate-500 uppercase tracking-widest font-bold">Base Ops</div>
+                <div class="text-sm text-white">West Bengal, India</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Contact Form -->
+        <div class="text-left space-y-5 mb-10">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div>
+              <label class="text-[9px] font-headline uppercase tracking-widest text-slate-500 font-bold block mb-2">Your Name</label>
+              <input id="cName" type="text" placeholder="Enter your name"/>
+            </div>
+            <div>
+              <label class="text-[9px] font-headline uppercase tracking-widest text-slate-500 font-bold block mb-2">Your Email</label>
+              <input id="cEmail" type="email" placeholder="your@email.com"/>
+            </div>
+          </div>
+          <div>
+            <label class="text-[9px] font-headline uppercase tracking-widest text-slate-500 font-bold block mb-2">Message</label>
+            <textarea id="cMsg" placeholder="Describe your project or idea..."></textarea>
+          </div>
+        </div>
+
+        <button onclick="sendMessage()" class="w-full md:w-auto px-16 py-5 bg-primary text-white font-headline font-black uppercase tracking-[0.4em] text-xs transition-all hover:neon-border-glow hover:scale-[1.03] flex items-center justify-center gap-4 mx-auto group rounded-sm">
+          Establish Protocol
+          <span class="material-symbols-outlined group-hover:translate-x-2 transition-transform">bolt</span>
+        </button>
+        <p id="formMsg" class="text-[10px] font-headline text-primary uppercase tracking-widest mt-4 h-4"></p>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="py-10 border-t border-white/5 bg-black/60 backdrop-blur-md">
+      <div class="max-w-7xl mx-auto px-6 md:px-8 flex flex-col md:flex-row justify-between items-center gap-6">
+        <span class="text-[9px] font-headline font-bold uppercase tracking-[0.5em] text-slate-500">© 2024 SUBHA // OBSIDIAN VOID OPS</span>
+        <div class="flex gap-10">
+          <a class="text-[9px] font-headline font-bold uppercase tracking-[0.5em] text-slate-500 hover:text-primary transition-colors" href="#">Privacy</a>
+          <a class="text-[9px] font-headline font-bold uppercase tracking-[0.5em] text-slate-500 hover:text-primary transition-colors" href="#">Neural Security</a>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+</main>
+
+<!-- Scanlines overlay -->
+<div class="fixed inset-0 pointer-events-none z-[100] opacity-[0.03] scanline"></div>
+
+<!-- ════════ PROJECT MODAL ════════ -->
+<div class="modal-overlay" id="projectModal">
+  <div class="modal-box obsidian-glass" id="projectModalBox">
+    <div class="flex justify-between items-start mb-8">
+      <span id="mArchive" class="text-[10px] font-headline text-primary font-bold tracking-[0.4em] uppercase"></span>
+      <button onclick="closeModal('projectModal')" class="w-9 h-9 rounded-full border border-white/10 flex items-center justify-center hover:border-primary transition-all">
+        <span class="material-symbols-outlined text-slate-400 hover:text-primary text-sm">close</span>
+      </button>
+    </div>
+    <h2 id="mTitle" class="text-3xl md:text-4xl font-headline font-bold mb-4 tracking-tighter"></h2>
+    <p id="mDesc" class="text-slate-300 text-sm leading-relaxed mb-8"></p>
+    <div id="mTags" class="flex flex-wrap gap-3 mb-8"></div>
+    <div id="mDetails" class="space-y-4 border-t border-white/5 pt-8"></div>
+    <a id="mGithub" href="https://github.com/Subha-jit007" target="_blank" class="mt-8 inline-flex items-center gap-3 text-[10px] font-headline uppercase tracking-widest text-primary hover:text-white transition-colors">
+      <span class="material-symbols-outlined text-sm">code</span>View Source on GitHub
+    </a>
+  </div>
+</div>
+
+<!-- ════════ SKILL MODAL ════════ -->
+<div class="modal-overlay" id="skillModal">
+  <div class="modal-box obsidian-glass">
+    <div class="flex justify-between items-start mb-8">
+      <span class="material-symbols-outlined text-primary text-3xl" id="sIcon">terminal</span>
+      <button onclick="closeModal('skillModal')" class="w-9 h-9 rounded-full border border-white/10 flex items-center justify-center hover:border-primary transition-all">
+        <span class="material-symbols-outlined text-slate-400 hover:text-primary text-sm">close</span>
+      </button>
+    </div>
+    <h2 id="sTitle" class="text-3xl font-headline font-bold mb-4 tracking-tighter"></h2>
+    <p id="sDesc" class="text-slate-300 text-sm leading-relaxed mb-8"></p>
+    <div class="space-y-3">
+      <div class="flex justify-between">
+        <span class="text-[10px] font-headline uppercase tracking-widest text-slate-500 font-bold">Proficiency</span>
+        <span id="sPct" class="text-primary font-headline font-bold text-sm"></span>
+      </div>
+      <div class="w-full bg-white/5 h-[1px] relative">
+        <div id="sBar" class="absolute top-0 left-0 h-[2px] bg-primary shadow-[0_0_15px_#FF003C] skill-fill" style="--w:0%"></div>
+      </div>
+    </div>
+    <button onclick="closeModal('skillModal');showSection('contact')" class="mt-10 px-8 py-4 border border-primary/50 text-[10px] font-headline font-bold uppercase tracking-widest hover:bg-primary transition-all rounded-sm">
+      Collaborate on this →
+    </button>
+  </div>
+</div>
+
+<script>
+// ─── Data ───
+const PROJECTS = [
+  {
+    archive:'Archive 001', title:'Hand Movement Capturer',
+    desc:'High-fidelity MediaPipe implementation for real-time skeletal hand mapping and gesture recognition systems. Capable of tracking 21 hand landmarks at 60fps with sub-10ms latency.',
+    tags:['MediaPipe','Python','OpenCV','Computer Vision'],
+    details:[
+      {label:'Status', value:'Completed — 2024'},
+      {label:'Type', value:'Computer Vision / HCI'},
+      {label:'Tech Stack', value:'Python 3.11 + MediaPipe + OpenCV'},
+    ]
+  },
+  {
+    archive:'Archive 002', title:'Air Draw Interaction',
+    desc:'Spatial computing experiment allowing users to render digital art via mid-air finger gestures in 3D environments. Uses index finger tracking as brush input with dynamic color switching.',
+    tags:['Computer Vision','Python','MediaPipe','OpenCV'],
+    details:[
+      {label:'Status', value:'Completed — 2024'},
+      {label:'Type', value:'Spatial Computing / Creative Tools'},
+      {label:'Tech Stack', value:'Python + MediaPipe Hands + NumPy'},
+    ]
+  },
+  {
+    archive:'Archive 006', title:'House Cleaner Robot',
+    desc:'Autonomous domestic navigation system integrating robotics sensors with high-level automation protocols. Features obstacle avoidance, room mapping, and scheduled cleaning routines.',
+    tags:['Automation','Hardware','Arduino','Robotics'],
+    details:[
+      {label:'Status', value:'Prototype — In Progress'},
+      {label:'Type', value:'Hardware Robotics / Automation'},
+      {label:'Tech Stack', value:'Arduino + Ultrasonic Sensors + Custom Control'},
+    ]
+  },
+  {
+    archive:'Project 003', title:'Transparent UI Website',
+    desc:'Glassmorphism architecture for next-gen SaaS platforms. Features dynamic blur effects, layered transparency, and responsive layout built with modern CSS and Tailwind.',
+    tags:['HTML','CSS','Tailwind','Glassmorphism'],
+    details:[
+      {label:'Status', value:'Completed'},
+      {label:'Type', value:'Frontend / UI Design'},
+      {label:'Tech Stack', value:'HTML5 + TailwindCSS + Vanilla JS'},
+    ]
+  },
+  {
+    archive:'Project 004', title:'Troll Snake Game',
+    desc:'Advanced algorithmic pathfinding logic implemented in a snake game with a twist — the snake reacts intelligently to player input using BFS-based pathfinding algorithms.',
+    tags:['Python','Pygame','Algorithms','Game Dev'],
+    details:[
+      {label:'Status', value:'Completed'},
+      {label:'Type', value:'Game Development / Algorithms'},
+      {label:'Tech Stack', value:'Python + Pygame + BFS Pathfinding'},
+    ]
+  },
+  {
+    archive:'Project 005', title:'Weather App Engine',
+    desc:'Real-time API data processing with predictive visualization. Pulls live weather data, processes forecasts, and displays clean animated UI with hourly/weekly breakdowns.',
+    tags:['JavaScript','API','Weather','Data Viz'],
+    details:[
+      {label:'Status', value:'Completed'},
+      {label:'Type', value:'Full Stack / API Integration'},
+      {label:'Tech Stack', value:'HTML + JS + OpenWeather API + Chart.js'},
+    ]
+  }
+];
+
+// ─── Section System ───
+let currentSection = 'home';
+
+function showSection(id) {
+  const prev = document.getElementById('section-' + currentSection);
+  const next = document.getElementById('section-' + id);
+  if (!next || currentSection === id) return;
+
+  // Update nav
+  document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+  const navEl = document.getElementById('nav-' + id);
+  if (navEl) navEl.classList.add('active');
+
+  // Fade out current
+  prev.classList.remove('visible');
+  setTimeout(() => {
+    prev.classList.remove('active');
+    // Show next
+    next.classList.add('active');
+    // Scroll next to top
+    const inner = next.querySelector('div');
+    if (inner) inner.scrollTop = 0;
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        next.classList.add('visible');
+        // Animate skill bars if skills section
+        if (id === 'skills') animateSkillBars();
+      });
+    });
+    currentSection = id;
+  }, 320);
+}
+
+function animateSkillBars() {
+  setTimeout(() => {
+    document.querySelectorAll('.skill-fill').forEach(bar => {
+      bar.classList.add('animated');
+    });
+  }, 100);
+}
+
+// ─── Project Modal ───
+function openProject(i) {
+  const p = PROJECTS[i];
+  document.getElementById('mArchive').textContent = p.archive;
+  document.getElementById('mTitle').textContent = p.title;
+  document.getElementById('mDesc').textContent = p.desc;
+
+  const tagsEl = document.getElementById('mTags');
+  tagsEl.innerHTML = p.tags.map(t =>
+    `<span class="px-3 py-1 bg-white/5 border border-white/10 rounded-full text-[9px] font-headline font-bold uppercase tracking-widest">${t}</span>`
+  ).join('');
+
+  const detEl = document.getElementById('mDetails');
+  detEl.innerHTML = p.details.map(d =>
+    `<div class="flex justify-between items-center">
+      <span class="text-[9px] font-headline uppercase tracking-widest text-slate-500 font-bold">${d.label}</span>
+      <span class="text-sm text-white font-medium">${d.value}</span>
+    </div>`
+  ).join('');
+
+  openModal('projectModal');
+}
+
+// ─── Skill Modal ───
+function openSkill(title, desc, pct, icon) {
+  document.getElementById('sTitle').textContent = title;
+  document.getElementById('sDesc').textContent = desc;
+  document.getElementById('sPct').textContent = pct;
+  document.getElementById('sIcon').textContent = icon;
+  const bar = document.getElementById('sBar');
+  bar.style.setProperty('--w', pct);
+  bar.classList.remove('animated');
+  openModal('skillModal');
+  setTimeout(() => bar.classList.add('animated'), 200);
+}
+
+// ─── Modal Helpers ───
+function openModal(id) {
+  const m = document.getElementById(id);
+  m.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+  document.body.style.overflow = '';
+}
+// Close on overlay click
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', function(e) {
+    if (e.target === this) closeModal(this.id);
+  });
+});
+// Close on Escape
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    closeModal('projectModal');
+    closeModal('skillModal');
+    if (document.getElementById('mobileMenu').classList.contains('open')) toggleMobileMenu();
+  }
+});
+
+// ─── Mobile Menu ───
+function toggleMobileMenu() {
+  const menu = document.getElementById('mobileMenu');
+  const overlay = document.getElementById('mobileOverlay');
+  const open = menu.classList.toggle('open');
+  overlay.classList.toggle('open', open);
+  // Animate hamburger
+  document.getElementById('hb1').style.transform = open ? 'rotate(45deg) translate(4px,5px)' : '';
+  document.getElementById('hb2').style.opacity = open ? '0' : '1';
+  document.getElementById('hb3').style.transform = open ? 'rotate(-45deg) translate(4px,-5px)' : '';
+  document.getElementById('hb3').style.width = open ? '24px' : '16px';
+}
+
+// ─── Contact Form ───
+function sendMessage() {
+  const name = document.getElementById('cName').value.trim();
+  const email = document.getElementById('cEmail').value.trim();
+  const msg = document.getElementById('cMsg').value.trim();
+  const out = document.getElementById('formMsg');
+
+  if (!name || !email || !msg) {
+    out.textContent = '⚠ All fields required';
+    out.style.color = '#FF003C';
+    return;
+  }
+  if (!email.includes('@')) {
+    out.textContent = '⚠ Invalid email address';
+    out.style.color = '#FF003C';
+    return;
+  }
+
+  // Open mailto
+  const subject = encodeURIComponent(`Portfolio Contact — ${name}`);
+  const body = encodeURIComponent(`Name: ${name}\nEmail: ${email}\n\n${msg}`);
+  window.location.href = `mailto:subhamahata1234@gmail.com?subject=${subject}&body=${body}`;
+
+  out.textContent = '✓ Protocol established — opening mail client';
+  out.style.color = '#FF003C';
+  document.getElementById('cName').value = '';
+  document.getElementById('cEmail').value = '';
+  document.getElementById('cMsg').value = '';
+}
+
+// ─── Init: Show home ───
+window.addEventListener('load', () => {
+  const homePanel = document.getElementById('section-home');
+  homePanel.classList.add('active');
+  document.getElementById('nav-home').classList.add('active');
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      homePanel.classList.add('visible');
+    });
+  });
+});
+</script>
+</body>
+</html>
